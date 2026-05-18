@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Notes App</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      margin: 20px;
+    }
+
+    .note {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin: 15px 0;
+      border-radius: 5px;
+       box-shadow: 0 4px 12px rgba(255, 94, 98, 0.4);
+      max-width: 650px;
+      background: linear-gradient(135deg, #00c6ff, #0072ff);
+    }
+
+    button {
+      margin: 5px;
+      cursor: pointer;
+      padding: 10px 20px;
+      background: linear-gradient(135deg, #141e30, #243b55);
+      font-size: 16px;
+      border-radius: 12px;
+      border: none;
+      outline: 0;
+      color: #fff;
+
+    }
+
+     button:hover{
+        background-color: rgba(59, 59, 90, 0.801);
+     }
+
+    input {
+      margin: 5px;
+      padding: 8px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>Notes App</h2>
+
+<!-- CREATE NOTE -->
+<h3>Create Note</h3>
+
+<input id="title" placeholder="Title" />
+<input id="content" placeholder="Content" />
+<input id="category" placeholder="Category" />
+
+<button onclick="createNote()">Add Note</button>
+
+<hr>
+
+<!-- SEARCH -->
+<input
+  id="search"
+  placeholder="Search notes..."
+  oninput="handleSearch()"
+/>
+
+<!-- NOTES -->
+<div id="notes"></div>
+
+<!-- PAGINATION -->
+<button onclick="prevPage()">Prev</button>
+
+<span id="pageInfo"></span>
+
+<button onclick="nextPage()">Next</button>
+
+<script>
+  const API = "http://localhost:5050/api/notes";
+
+  let page = 1;
+  let totalPages = 1;
+
+  // CREATE NOTE
+  async function createNote() {
+    try {
+      const title = document.getElementById("title").value.trim();
+      const content = document.getElementById("content").value.trim();
+      const category = document.getElementById("category").value.trim();
+
+      // Validation
+      if (!title || !content) {
+        alert("Title and Content are required");
+        return;
+      }
+
+      const res = await fetch(API, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          title,
+          content,
+          category
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.message || "Failed to create note");
+        return;
+      }
+
+      // Clear inputs
+      document.getElementById("title").value = "";
+      document.getElementById("content").value = "";
+      document.getElementById("category").value = "";
+
+      loadNotes();
+
+    } catch (error) {
+      console.error(error);
+      alert("Something went wrong");
+    }
+  }
+
+  // LOAD NOTES
+  async function loadNotes() {
+    try {
+      const search = document
+        .getElementById("search")
+        .value.trim();
+
+      const res = await fetch(
+        `${API}?page=${page}&limit=5&search=${search}`
+      );
+
+      const data = await res.json();
+
+      totalPages = data.pages || 1;
+
+      document.getElementById("pageInfo").innerText =
+        `Page ${data.page} of ${data.pages}`;
+
+      const container = document.getElementById("notes");
+
+      container.innerHTML = "";
+
+      if (data.notes.length === 0) {
+        container.innerHTML = "<p>No notes found</p>";
+        return;
+      }
+
+      data.notes.forEach(note => {
+        container.innerHTML += `
+          <div class="note">
+            <h3>${note.title}</h3>
+
+            <p>${note.content}</p>
+
+            <small>${note.category || ""}</small>
+
+            <br/>
+
+            <button onclick="deleteNote('${note._id}')">
+              Delete
+            </button>
+          </div>
+        `;
+      });
+
+    } catch (error) {
+      console.error(error);
+      alert("Failed to load notes");
+    }
+  }
+
+  // DELETE NOTE
+  async function deleteNote(id) {
+    try {
+      await fetch(`${API}/${id}`, {
+        method: "DELETE"
+      });
+
+      loadNotes();
+
+    } catch (error) {
+      console.error(error);
+      alert("Delete failed");
+    }
+  }
+
+  // NEXT PAGE
+  function nextPage() {
+    if (page < totalPages) {
+      page++;
+      loadNotes();
+    }
+  }
+
+  // PREVIOUS PAGE
+  function prevPage() {
+    if (page > 1) {
+      page--;
+      loadNotes();
+    }
+  }
+
+  // RESET PAGE WHEN SEARCHING
+  function handleSearch() {
+    page = 1;
+    loadNotes();
+  }
+
+  // INITIAL LOAD
+  loadNotes();
+</script>
+
+</body>
+</html>
