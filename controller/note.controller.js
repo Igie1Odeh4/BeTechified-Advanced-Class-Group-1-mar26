@@ -70,6 +70,29 @@ export const getNotes = async (req, res, next) => {
 };
 
 
+
+export const getNoteById = async (req, res, next) => {
+  try {
+    const note = await Note.findById(req.params.id);
+
+    if (!note) {
+      return res.status(404).json({
+        message: "Note not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      note
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
 export const updateNote = async (req, res, next) => {
   try {
     const updatedNote = await Note.findByIdAndUpdate(
