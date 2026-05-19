@@ -9,6 +9,7 @@ import {
 import {
   createNote,
   getNotes,
+  getNoteById,
   updateNote,
   deleteNote
 } from "../controller/note.controller.js";
@@ -18,6 +19,9 @@ router.post("/", validateCreateNote, createNote);
 
 // READ ALL
 router.get("/", getNotes);
+
+// READ one
+router.get("/:id", getNoteById);
 
 // UPDATE
 router.put("/:id", validateUpdateNote, updateNote);
